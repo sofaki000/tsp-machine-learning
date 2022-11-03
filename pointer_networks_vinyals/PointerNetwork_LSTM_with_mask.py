@@ -2,11 +2,12 @@ from torch.autograd import Variable
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
+from torch.distributions import Categorical
 
 
-class PointerNetwork(nn.Module):
+class PointerNetwork_with_mask(nn.Module):
     def __init__(self, input_size, emb_size, weight_size, answer_seq_len, hidden_size=512):
-        super(PointerNetwork, self).__init__()
+        super(PointerNetwork_with_mask, self).__init__()
         self.hidden_size = hidden_size
         self.input_size = input_size
         self.answer_seq_len = answer_seq_len
@@ -38,19 +39,30 @@ class PointerNetwork(nn.Module):
         cell_state = encoder_states[-1]   # cell state: last encoder state                           # (bs, h)
 
         probs = []
+        tour = []
+        # mask is used to not revisit same city
+        mask = torch.zeros(batch_size,self.answer_seq_len, dtype=torch.bool)
+
         # Decoding
         for i in range(self.answer_seq_len): # range(M)
             hidden, cell_state = self.dec(decoder_input, (hidden, cell_state)) # (bs, h), (bs, h)
             # Compute blended representation at each decoder time step
             blend1 = self.W1(encoder_states)          # (L, bs, W)
             blend2 = self.W2(hidden)                  # (bs, W)
-            blend_sum = F.tanh(blend1 + blend2)    # (L, bs, W) # typos apo to paper
+            blend_sum = F.tanh(blend1 + blend2)       # (L, bs, W) # typos apo to paper
             out = self.vt(blend_sum).squeeze()        # (L, bs)
-            if len(out.size())==1:
-                out = F.log_softmax(out.contiguous(), -1)
-            else:
-                out = F.log_softmax(out.transpose(0, 1).contiguous(), -1) # (bs, L)
+            out = torch.tensor(out.transpose(0, 1).detach(), requires_grad=True)
+            masked_output  = out.clone()
+            masked_output[mask] = -100000.0
+
+            out = torch.tensor(masked_output.detach(), requires_grad=True)
+            out = F.log_softmax(out.contiguous(), -1) # (bs, L)
+            cat = Categorical(out)
+            chosen_city = cat.sample() # gia to kathe sample poy exoume se auto to batch_size, ti city dialegw
+            mask[[i for i in range(batch_size)], chosen_city] = True
+            tour.append(chosen_city)
+
             probs.append(out) #gia ton epomeno node (gia kathe batch), dinei ena probability poio tha einai
             # apo ta available nodes
         probs = torch.stack(probs, dim=1) # (bs, M, L)
-        return probs
+        return (probs, tour)
