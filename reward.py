@@ -31,7 +31,7 @@ def get_distance_matrix_from_coordinate_pairs(coordinates, ctys):
 def get_distance_from_coordinate_pairs(coordinates, cities, tour):
     dist_matrix = get_distance_matrix_from_coordinate_pairs(coordinates, cities)
     tour_len =0
-    for i in range(len(tour)-1):
+    for i in range(len(tour)-1): # gia 1 tour
         if type(tour[i])==int:
             current_city_index =tour[i]
             next_city_index =tour[i+1]

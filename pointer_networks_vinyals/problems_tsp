@@ -1,2 +1,7 @@
 1. pws episkeptomaste oles tis cities?-> mask DONE
 2. den epistrefei sthn idia poly
+3. ta city coordinates na allazoun! den ginetai synexeia sta idia cities na ginesai train
+
+
+next steps:
+add reward function the distance, not the supervised labels from heuristic
