@@ -30,19 +30,19 @@ class PointerNetwork(nn.Module):
 
         # Encoding
         encoder_states, (hidden_state, cell_state) = self.enc(input) # encoder_state: (bs, sequence_length, H)
-        encoder_states = encoder_states.transpose(1, 0) # (sequence_length, bs, H)
+        encoder_last_state = encoder_states.transpose(1, 0) # (sequence_length, bs, H)
 
         # Decoding states initialization
         decoder_input = Variable(torch.zeros(batch_size, self.emb_size)) # (bs, embd_size)
         hidden = Variable(torch.zeros([batch_size, self.hidden_size]))   # (bs, h)
-        cell_state = encoder_states[-1]   # cell state: last encoder state                           # (bs, h)
+        cell_state = encoder_last_state[-1]   # cell state: last encoder state                           # (bs, h)
 
         probs = []
         # Decoding
         for i in range(self.answer_seq_len): # range(M)
             hidden, cell_state = self.dec(decoder_input, (hidden, cell_state)) # (bs, h), (bs, h)
             # Compute blended representation at each decoder time step
-            blend1 = self.W1(encoder_states)          # (L, bs, W)
+            blend1 = self.W1(encoder_last_state)          # (L, bs, W)
             blend2 = self.W2(hidden)                  # (bs, W)
             blend_sum = F.tanh(blend1 + blend2)    # (L, bs, W) # typos apo to paper
             out = self.vt(blend_sum).squeeze()        # (L, bs)

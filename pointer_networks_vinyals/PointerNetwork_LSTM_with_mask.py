@@ -36,10 +36,12 @@ class PointerNetwork_with_mask(nn.Module):
         # Decoding states initialization
         decoder_input = Variable(torch.zeros(batch_size, self.emb_size)) # (bs, embd_size)
         hidden = Variable(torch.zeros([batch_size, self.hidden_size]))   # (bs, h)
-        cell_state = encoder_states[-1]   # cell state: last encoder state                           # (bs, h)
+        cell_state = encoder_states[-1]   # cell state: last encoder state ,# (bs, h)
 
         probs = []
-        tour = []
+        tours = [] #for each batch sample, the tours will contain the chosen tour
+        for i in range(batch_size):
+            tours.append([])
         # mask is used to not revisit same city
         mask = torch.zeros(batch_size,self.answer_seq_len, dtype=torch.bool)
 
@@ -53,16 +55,17 @@ class PointerNetwork_with_mask(nn.Module):
             out = self.vt(blend_sum).squeeze()        # (L, bs)
             out = torch.tensor(out.transpose(0, 1).detach(), requires_grad=True)
             masked_output  = out.clone()
-            masked_output[mask] = -100000.0
+            masked_output[mask] = 100000.0
 
             out = torch.tensor(masked_output.detach(), requires_grad=True)
             out = F.log_softmax(out.contiguous(), -1) # (bs, L)
             cat = Categorical(out)
-            chosen_city = cat.sample() # gia to kathe sample poy exoume se auto to batch_size, ti city dialegw
-            mask[[i for i in range(batch_size)], chosen_city] = True
-            tour.append(chosen_city)
+            chosen_city_for_each_batch_sample = cat.sample() # gia to kathe sample poy exoume se auto to batch_size, ti city dialegw
+            mask[[i for i in range(batch_size)], chosen_city_for_each_batch_sample] = True
+            for i in range(batch_size):
+                tours[i].append(chosen_city_for_each_batch_sample[i].item())
 
             probs.append(out) #gia ton epomeno node (gia kathe batch), dinei ena probability poio tha einai
             # apo ta available nodes
         probs = torch.stack(probs, dim=1) # (bs, M, L)
-        return (probs, tour)
+        return (probs, tours)

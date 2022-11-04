@@ -1,0 +1,14 @@
+2015
+
+implementations:
+1. https://github.com/jojonki/Pointer-Networks → sequence problems
+
+Pros:
+1. Pointer networks allows the model to effectively point to a specific position in the input sequence rather
+than predicting an index value from a fixed size vocabulary. This makes it posibble to generalize beyond the pre-specified
+graph size
+
+Cons:
+1. needs a supervised label set (we get it from a heuristic algorithm)
+
+

@@ -1,0 +1,15 @@
+Pointer network vinyals
+1. https://github.com/jojonki/Pointer-Networks → sequence problems only
+tsp:
+εκανα εγω μια προσπαθεια αλλα επισκεπτετε συνεχεια τα ιδια nodes
+
+https://github.com/keon/pointer-networks -> tsp me keras
+
+Graph pointer network
+2. https://github.com/qiang-ma/graph-pointer-network → tsp
+
+Neural Combinatorial Optimization with Reinforcement Learning
+3. https://github.com/ita9naiwa/TSP-solver-using-reinforcement-learning
+
+Attention, Learn to Solve Routing Problems!
+4.https://github.com/ita9naiwa/TSP-solver-using-reinforcement-learning

@@ -18,12 +18,13 @@ def train_model_that_returns_indexes(model, X, Y, batch_size, n_epochs):
             x = X[i:i + batch_size]  # (bs, sequence_length)
             y = Y[i:i + batch_size]  # (bs, sequence_length)
 
-            (probs, tour) = model(x)  # (bs, M, L)
-            outputs = probs.view(-1, sequence_length)  # (bs*M, L)
-
+            (probs, tours) = model(x)  # (bs, M, L)
+            # use next line if you want to train from probability.
+            # outputs = probs.view(-1, sequence_length)  # (bs*M, L)
+            tours = torch.tensor(tours, dtype=torch.float32, requires_grad=True).flatten()
             y = y.reshape(-1)  # (bs*M)
 
-            loss = F.nll_loss(outputs, y)
+            loss = F.nll_loss(tours, y)
             mean_loss_per_epoch = loss.detach().item()
             optimizer.zero_grad()
             loss.backward()
@@ -80,9 +81,33 @@ def train_model_that_returns_probabilities_sequence(model, X, Y, batch_size, n_e
     plt.plot(indexes, losses)
     plt.show()
 
+def test_tsp(model, X, Y, coordinates = None):
+    probs, tours = model(X)  # (bs, M, L)
+    # if len(probs.size())==2:
+    #     _v, result_sequence = torch.max(probs, 1)
+    # else:
+    #     _v, result_sequence = torch.max(probs, 2)
+
+    if coordinates is not None:
+        cities = []
+        for i in range(X.shape[1]):
+            cities.append(i)
+        for i in range(len(tours)):
+            # gia kathe test sample koitame pws phgame sygkritika me ton heuristic algorithmo
+            distance_of_heuristic = get_distance_from_coordinate_pairs(coordinates[0], cities ,Y[i])
+            distance_of_model = get_distance_from_coordinate_pairs(coordinates[0], cities, tours[i])
+            print(f'Tour suggested by heuristic: {Y[i]}')
+            print(f"Distance traveled (heuristic solution): {distance_of_heuristic:.2f}")
+            print(f'Tour suggested by model: {tours[i]}')
+            print(f"Distance traveled (model solution): {distance_of_model:.2f}")
+
+    correct_count = sum([1 if torch.equal(ind.data, y.data) else 0 for ind, y in zip(tours, Y)])
+    if(len(X)==0):
+        return
+    print(f'Acc: {(correct_count / len(X) * 100):.2f}% ({correct_count}/{ len(X)})')
 
 def test(model, X, Y, coordinates = None):
-    probs = model(X)  # (bs, M, L)
+    probs, tours = model(X)  # (bs, M, L)
     if len(probs.size())==2:
         _v, result_sequence = torch.max(probs, 1)
     else:

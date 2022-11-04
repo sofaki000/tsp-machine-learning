@@ -32,9 +32,15 @@ def get_distance_from_coordinate_pairs(coordinates, cities, tour):
     dist_matrix = get_distance_matrix_from_coordinate_pairs(coordinates, cities)
     tour_len =0
     for i in range(len(tour)-1):
-        tour_len += dist_matrix[i][i+1]
+        if type(tour[i])==int:
+            current_city_index =tour[i]
+            next_city_index =tour[i+1]
+        else:
+            current_city_index = tour[i].item()
+            next_city_index = tour[i + 1].item()
+        tour_len += dist_matrix[current_city_index][next_city_index]
     return tour_len
-#
+
 # coordinates = [[5, 7], [7, 3], [8, 1]]
 # tour = [1, 2,0]
 # ctys = [0, 1, 2]
