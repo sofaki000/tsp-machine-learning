@@ -1,7 +1,7 @@
 1. pws episkeptomaste oles tis cities?-> mask DONE
 2. den epistrefei sthn idia poly
-3. ta city coordinates na allazoun! den ginetai synexeia sta idia cities na ginesai train
-
+3. ta city coordinates na allazoun! den ginetai synexeia sta idia cities na ginesai train-> DONE (random coordinates)
+4. save result graphs and model
 
 next steps:
-add reward function the distance, not the supervised labels from heuristic
+add reward function the distance, not the supervised labels from heuristic -> DONE
