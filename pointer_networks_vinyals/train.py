@@ -28,7 +28,7 @@ def train_model_that_returns_indexes_with_reward_fn(model, X, coordinates, batch
                 reward += tour_len
 
 
-            loss =torch.tensor(-reward, dtype=torch.float32, requires_grad=True)
+            loss = torch.tensor(-reward, dtype=torch.float32, requires_grad=True)
             mean_loss_per_epoch = loss.detach().item()
             optimizer.zero_grad()
             loss.backward()

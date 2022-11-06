@@ -5,7 +5,6 @@ from torch.optim import lr_scheduler
 from tqdm import tqdm
 
 from graph_point_networks.GraphPointerNetworkModel import GPN
-from plotUtilities import plot_model_with_me
 
 if __name__ == "__main__":
 
@@ -38,12 +37,12 @@ if __name__ == "__main__":
     # R_mean = []
     # R_std = []
     for epoch in range(n_epoch):
-        for i in tqdm(range(train_size)):
+        for i in tqdm(range(train_size)): #gia kathe sample tha bgaloume ena tour
             optimizer.zero_grad()
 
-            X = np.random.rand(batch_size, size, 2)
+            X_all = np.random.rand(batch_size, size, 2)
 
-            X = torch.Tensor(X)#.cuda()
+            X_all = torch.Tensor(X_all)#.cuda()
 
             mask = torch.zeros(batch_size, size)#.cuda()
 
@@ -51,13 +50,13 @@ if __name__ == "__main__":
             logprobs = 0
             reward = 0
 
-            Y = X.view(batch_size, size, 2)
+            Y = X_all.view(batch_size, size, 2)
             x = Y[:, 0, :]
             h = None
             c = None
 
             for k in range(size):
-                output, h, c, _ = model(x=x, X_all=X, h=h, c=c, mask=mask)
+                output, h, c, _ = model(x=x, X_all=X_all, h=h, c=c, mask=mask)
                 sampler = torch.distributions.Categorical(output)
                 idx = sampler.sample()  # now the idx has B elements
 
@@ -83,14 +82,14 @@ if __name__ == "__main__":
             C = 0
             baseline = 0
 
-            Y = X.view(batch_size, size, 2)
+            Y = X_all.view(batch_size, size, 2)
             x = Y[:, 0, :]
             h = None
             c = None
 
             for k in range(size):
 
-                output, h, c, _ = model(x=x, X_all=X, h=h, c=c, mask=mask)
+                output, h, c, _ = model(x=x, X_all=X_all, h=h, c=c, mask=mask)
 
                 # sampler = torch.distributions.Categorical(output)
                 # idx = sampler.sample()         # now the idx has B elements
@@ -127,8 +126,8 @@ if __name__ == "__main__":
 
                 # greedy validation
                 tour_len = 0
-                X = validation_data
-                X = torch.Tensor(X) #.cuda()
+                X_all = validation_data
+                X_all = torch.Tensor(X_all) #.cuda()
 
                 mask = torch.zeros(validation_size, size)#.cuda()
 
@@ -137,14 +136,14 @@ if __name__ == "__main__":
                 Idx = []
                 reward = 0
 
-                Y = X.view(validation_size, size, 2)  # to the same batch size
+                Y = X_all.view(validation_size, size, 2)  # to the same batch size
                 x = Y[:, 0, :]
                 h = None
                 c = None
 
                 for k in range(size):
 
-                    output, h, c, hidden_u = model(x=x, X_all=X, h=h, c=c, mask=mask)
+                    output, h, c, hidden_u = model(x=x, X_all=X_all, h=h, c=c, mask=mask)
 
                     sampler = torch.distributions.Categorical(output)
                     # idx = sampler.sample()

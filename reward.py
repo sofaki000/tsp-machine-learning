@@ -28,6 +28,16 @@ def get_distance_matrix_from_coordinate_pairs(coordinates, ctys):
     result = pd.DataFrame(distance_matrix(df.values, df.values), index=df.index, columns=df.index)
     return result
 
+
+
+def get_distance_of_two_nodes_given_coordinates(node_coordinates):
+    dist_matrix = get_distance_matrix_from_coordinate_pairs(node_coordinates, [0,1])
+    return dist_matrix[0][1]
+
+# coordinates = [[5, 7], [7, 3]]
+# result =  get_distance_of_two_nodes_given_coordinates(coordinates)
+# print(result)
+
 def get_distance_from_coordinate_pairs(coordinates, cities, tour):
     dist_matrix = get_distance_matrix_from_coordinate_pairs(coordinates, cities)
     tour_len =0
