@@ -10,10 +10,10 @@ if __name__ == "__main__":
 
     # args
     size = 10
-    n_epoch = 100
+    n_epoch = 5
     batch_size = 512
-    train_size = 2000
-    validation_size = 1000
+    train_size = 100
+    validation_size = 50
     learn_rate = 1e-3
     save_root = './model/gpn_tsp' + str(size) + '.pt'
 
@@ -56,26 +56,26 @@ if __name__ == "__main__":
             c = None
 
             for k in range(size):
-                output, h, c, _ = model(x=x, X_all=X_all, h=h, c=c, mask=mask)
-                sampler = torch.distributions.Categorical(output)
+                probabilities, h, c, _ = model(point_context=x, X_all=X_all, h=h, c=c, mask=mask)
+                sampler = torch.distributions.Categorical(probabilities)
                 idx = sampler.sample()  # now the idx has B elements
 
-                Y1 = Y[[i for i in range(batch_size)], idx.data].clone()
+                Y1_all_cities_at_this_batch = Y[[i for i in range(batch_size)], idx.data].clone()
                 if k == 0:
-                    Y_ini = Y1.clone()
+                    Y_ini_all_cities_at_first_batch = Y1_all_cities_at_this_batch.clone()
                 if k > 0:
-                    reward = torch.norm(Y1 - Y0, dim=1)
+                    reward = torch.norm(Y1_all_cities_at_this_batch - Y0_all_cities_previous_batch, dim=1)
 
-                Y0 = Y1.clone()
+                Y0_all_cities_previous_batch = Y1_all_cities_at_this_batch.clone()
                 x = Y[[i for i in range(batch_size)], idx.data].clone()
                 R += reward
 
                 TINY = 1e-15
-                logprobs += torch.log(output[[i for i in range(batch_size)], idx.data] + TINY)
+                logprobs += torch.log(probabilities[[i for i in range(batch_size)], idx.data] + TINY)
                 mask[[i for i in range(batch_size)], idx.data] += -np.inf
 
-            R += torch.norm(Y1 - Y_ini, dim=1)
-
+            R += torch.norm(Y1_all_cities_at_this_batch - Y_ini_all_cities_at_first_batch, dim=1)
+            ### check this out!! exei self-critic implementation!!!! briskei reward me categorical sampling kai critic "reward" greedily!!
             # self-critic base line
             mask = torch.zeros(batch_size, size)#.cuda()
 
@@ -88,26 +88,25 @@ if __name__ == "__main__":
             c = None
 
             for k in range(size):
-
-                output, h, c, _ = model(x=x, X_all=X_all, h=h, c=c, mask=mask)
+                probabilities, h, c, _ = model(point_context=x, X_all=X_all, h=h, c=c, mask=mask)
 
                 # sampler = torch.distributions.Categorical(output)
                 # idx = sampler.sample()         # now the idx has B elements
-                idx = torch.argmax(output, dim=1)  # greedy baseline
+                idx = torch.argmax(probabilities, dim=1)  # greedy baseline
 
-                Y1 = Y[[i for i in range(batch_size)], idx.data].clone()
+                Y1_all_cities_at_this_batch = Y[[i for i in range(batch_size)], idx.data].clone()
                 if k == 0:
-                    Y_ini = Y1.clone()
+                    Y_ini_all_cities_at_first_batch = Y1_all_cities_at_this_batch.clone()
                 if k > 0:
-                    baseline = torch.norm(Y1 - Y0, dim=1)
+                    baseline = torch.norm(Y1_all_cities_at_this_batch - Y0_all_cities_previous_batch, dim=1)
 
-                Y0 = Y1.clone()
+                Y0_all_cities_previous_batch = Y1_all_cities_at_this_batch.clone()
                 x = Y[[i for i in range(batch_size)], idx.data].clone()
 
                 C += baseline
                 mask[[i for i in range(batch_size)], idx.data] += -np.inf
 
-            C += torch.norm(Y1 - Y_ini, dim=1)
+            C += torch.norm(Y1_all_cities_at_this_batch - Y_ini_all_cities_at_first_batch, dim=1)
 
             gap = (R - C).mean()
             loss = ((R - C - gap) * logprobs).mean()
@@ -143,28 +142,28 @@ if __name__ == "__main__":
 
                 for k in range(size):
 
-                    output, h, c, hidden_u = model(x=x, X_all=X_all, h=h, c=c, mask=mask)
+                    probabilities, h, c, hidden_u = model(point_context=x, X_all=X_all, h=h, c=c, mask=mask)
 
-                    sampler = torch.distributions.Categorical(output)
+                    sampler = torch.distributions.Categorical(probabilities)
                     # idx = sampler.sample()
-                    idx = torch.argmax(output, dim=1)
+                    idx = torch.argmax(probabilities, dim=1)
                     Idx.append(idx.data)
 
-                    Y1 = Y[[i for i in range(validation_size)], idx.data]
+                    Y1_all_cities_at_this_batch = Y[[i for i in range(validation_size)], idx.data]
 
                     if k == 0:
-                        Y_ini = Y1.clone()
+                        Y_ini_all_cities_at_first_batch = Y1_all_cities_at_this_batch.clone()
                     if k > 0:
-                        reward = torch.norm(Y1 - Y0, dim=1)
+                        reward = torch.norm(Y1_all_cities_at_this_batch - Y0_all_cities_previous_batch, dim=1)
 
-                    Y0 = Y1.clone()
+                    Y0_all_cities_previous_batch = Y1_all_cities_at_this_batch.clone()
                     x = Y[[i for i in range(validation_size)], idx.data]
 
                     R += reward
 
                     mask[[i for i in range(validation_size)], idx.data] += -np.inf
 
-                R += torch.norm(Y1 - Y_ini, dim=1)
+                R += torch.norm(Y1_all_cities_at_this_batch - Y_ini_all_cities_at_first_batch, dim=1)
                 tour_len += R.mean().item()
                 print('validation tour length:', tour_len)
 

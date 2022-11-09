@@ -1,3 +1,5 @@
+
+link for code: https://github.com/qiang-ma/graph-pointer-network (cool notebooks)
 Summary
 
 1. Builds upon the pointer networks by adding a graph embedding layer on the input, which captures relationships between nodes
@@ -8,6 +10,32 @@ or learns the heuristic to optimize the objective function
 4. each layer of the hierarchy defines a policy from which we sample actions. Each layer uses a hidden state h from the previous layer
 each layer corresponds to a different rl task-> so the reward functions are hand-designed to be different for each layer
 
+A graph pointer network is proposed (based on Vinyals pointer network) which consists of an encoder and a decoder.
+
+Encoder:
+The encoder consists of a point encoder and graph encoder. For the point encoder each city coordinate x_i is embedded
+into a higher dimensional vector x~_ieR^d where d is the hidden dimension.
+This linear transformations shares weights across all cities x_i.
+
+The vector x~_i for the current city x_i is then encoded by an LSTM. The hidden variabel xH_i of the LSTM
+is passed to both the decoder in the CURRENT step and the encoder in the NEXT step.
+For the graph encoder, we use graph embedding layers to encode all city coordinates and pass it to decoder
+decoder till now has: hidden state from the LSTM that took the encoded x_i. + all encoded city coords from the graph
+embedding layer.
+
+In TSP, the context information of a city node includes the enighbors information of the city. In a GPN context
+information is obtained by encoding all city coordinates X via a graph neural network GNN.
+
+Vector context:
+In previous work (pnt network vin) the context is computed based on the 2D coordinates of all cities ie XeR(N*2).We refer
+to this context as point context. In contrast,instead of using coordinate features directly,we use the vectors pointing
+from the current city to all other cities as the context which is refer to as vector context.
+=> This leads to transferable representations which allows the model to perform well on larger scale TSP
+
+Decoder:
+The decoder is based on an attention mechanism and outputs the pointer vector U_i which is then passed to a
+SOFTMAX layer to generate a distribution over the next candidate cities.
+We predict the next visited city by sampling or chosing greedily from the policy π(α|s) = softmax(u) (u=decoder function)
 Results:
 1. GPNs trained on small-scale TSP50/100 problems generalize well to larger scale TSP500/1000 problems with shorter tour len and faster
 computational times

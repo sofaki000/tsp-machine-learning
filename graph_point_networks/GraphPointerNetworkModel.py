@@ -78,7 +78,6 @@ class LSTM(nn.Module):
 
 
 class GPN(torch.nn.Module):
-
     def __init__(self, n_feature, n_hidden):
         super(GPN, self).__init__()
         self.city_size = 0
@@ -129,7 +128,7 @@ class GPN(torch.nn.Module):
         self.agg_2 = nn.Linear(n_hidden, n_hidden)
         self.agg_3 = nn.Linear(n_hidden, n_hidden)
 
-    def forward(self, x, X_all, mask, h=None, c=None, latent=None):
+    def forward(self, point_context, X_all, mask, h=None, c=None, latent=None):
         '''
         Inputs (B: batch size, size: city size, dim: hidden dimension)
 
@@ -159,8 +158,8 @@ class GPN(torch.nn.Module):
         # X_all = X_all - x_expand
 
         # the weights share across all the cities
-        x = self.embedding_x(x)
-        context = self.embedding_all(X_all)
+        point_context = self.embedding_x(point_context)
+        vector_context = self.embedding_all(X_all)
 
         # =============================
         # process hidden variable
@@ -179,7 +178,7 @@ class GPN(torch.nn.Module):
             h0 = h0.unsqueeze(0).contiguous()
             c0 = c0.unsqueeze(0).contiguous()
 
-            input_context = context.permute(1, 0, 2).contiguous()
+            input_context = vector_context.permute(1, 0, 2).contiguous()
             _, (h_enc, c_enc) = self.lstm0(input_context, (h0, c0))
 
             # let h0, c0 be the hidden variable of first turn
@@ -191,28 +190,31 @@ class GPN(torch.nn.Module):
         # =============================
 
         # (B, size, dim)
-        context = context.view(-1, self.dim)
+        vector_context = vector_context.view(-1, self.dim)
 
-        context = self.r1 * self.W1(context) \
-                  + (1 - self.r1) * F.relu(self.agg_1(context))
+        vector_context = self.r1 * self.W1(vector_context) + (1 - self.r1) * F.relu(self.agg_1(vector_context))
 
-        context = self.r2 * self.W2(context) \
-                  + (1 - self.r2) * F.relu(self.agg_2(context))
+        vector_context = self.r2 * self.W2(vector_context) + (1 - self.r2) * F.relu(self.agg_2(vector_context))
 
-        context = self.r3 * self.W3(context) \
-                  + (1 - self.r3) * F.relu(self.agg_3(context))
+        vector_context = self.r3 * self.W3(vector_context)  + (1 - self.r3) * F.relu(self.agg_3(vector_context))
 
         # LSTM encoder
-        h, c = self.encoder(x, h, c)
+        h, c = self.encoder(point_context, h, c)
 
         # query vector
         q = h
 
-        # pointer
-        u, _ = self.pointer(q, context)
+        # pointer. Implements attention mechanism u_i(j)= u^T * tanh(W_r r_j + W_q q)
+        # where r_j= vector context
+        # q = qurey vector from the hidden variable of LSTM
+        u, _ = self.pointer(q, vector_context)
 
         latent_u = u.clone()
-
+        # why? because we have two-layer hierachical GPN-> the coordinate x_i(k) of k-th layer
+        # is passed as input to a lower level neural network and the nn outputs apointer vector u_i(k-1)
+        #Then u_i(k-1) is added to the pointer vector u_i(k) of a higher layer ie:
+        # p_i(k) = softmax(u_i(k)+ au_i(k-1) where a is a trainable parameter
+        # u_i(k-1) contains lower leve information which provides a prior distribution over the output cities
         u = 10 * torch.tanh(u) + mask
 
         if latent is not None:
