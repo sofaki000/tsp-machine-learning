@@ -7,14 +7,14 @@ import torch
 import torch.nn as nn
 from torch import optim
 import torch.nn.functional as F
-from plotUtilities import save_plot_with_y_axis
+from plotUtilities import save_plot_with_y_axis, save_multiple_plots_for_different_experiments
 from reward import get_distance_of_two_nodes_given_coordinates
 
 learning_rate = 0.0001
-train_size = 2
+train_size = 50
 num_nodes = 5
 tsp_data = np.random.rand(train_size, num_nodes, 2)  # syntetagmenes twn nodes mas
-n_epochs = 200
+n_epochs = 3000
 
 learning_rates = [0.1, 0.01, 0.001, 0.0001]
 class Encoder(nn.Module):
@@ -39,6 +39,8 @@ class Model(nn.Module): #gyrnaei probability distribution gia to epomeno city po
 encoder = Encoder(n_feature=2,n_embedded=256, n_hidden=128)
 model = Model(n_hidden=128, output_size=num_nodes)
 
+experiments_mean_losses = []
+titles = []
 for lr in learning_rates:
     optimizer = optim.Adam(model.parameters(), lr=lr, weight_decay =0.01)
     current_city = tsp_data[:, 0, :]  # gia kathe sample, pare tis syntetagmenes tou prwtou city
@@ -94,19 +96,21 @@ for lr in learning_rates:
             current_city = curr_city_array
             loss = torch.tensor(distances_traveled, dtype=torch.float32, requires_grad=True)
             # print(f"loss: {loss.detach().item():.3f}")
-            losses_per_epoch.append(np.mean(distances_traveled))
+            mean_of_distances_traveled_for_all_cities_in_batch = np.mean(distances_traveled)
+            losses_per_epoch.append(mean_of_distances_traveled_for_all_cities_in_batch)
             optimizer.zero_grad()
             loss.mean().backward()
             optimizer.step()
+
+        # gia kathe epoch, briskw to mean olwn twn cities sto batch
         mean_loss = np.mean(losses_per_epoch)
         print(f"Mean loss at epoch {epoch}: {mean_loss:.2f}")
         mean_losses_per_epoch.append(mean_loss)
 
 
-    title = f"Num epochs: {n_epochs}, lr:{learning_rate}, nodes:{num_nodes}"
-    file_name ="results/mean_losses_per_epoch_"
-    save_plot_with_y_axis(mean_losses_per_epoch,title, file_name,xLabel="Epochs", yLabel="Mean loss")
-
+    title = f"Epochs={n_epochs}, lr={learning_rate}, n={num_nodes}"
+    experiments_mean_losses.append(mean_losses_per_epoch)
+    titles.append(title)
 
     cities = []
     for c in range(num_nodes):
@@ -117,7 +121,8 @@ for lr in learning_rates:
         for node_idx in range(num_nodes):
             print(tours[tour_idx][node_idx], end =" ")
         coordinates_for_current_tour= tsp_data[tour_idx]
-        # distance_traveled_at_tour = get_distance_from_coordinate_pairs(coordinates=coordinates_for_current_tour, cities=cities, tour=tours[tour_idx])
-        # print(f"tour length {distance_traveled_at_tour}")
         print("--------------------")
 
+
+file_name ="results/mean_losses_per_epoch_"
+save_multiple_plots_for_different_experiments(experiments_mean_losses,titles, file_name,xLabel="Epochs", yLabel="Mean loss")
