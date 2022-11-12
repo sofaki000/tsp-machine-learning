@@ -1,0 +1,56 @@
+code impl: https://github.com/ita9naiwa/TSP-solver-using-reinforcement-learning
+
+Given a set of city coordinates we train a rnn to predict a distribution over different city permutations.
+Reward signal: negative tour length
+To optimize the parameters we use a policy gradient method.
+
+Results: close to optimal results on 2D euclidean graphs with up to 100 nodes.
+For 2d eucl distance with up to 100 nods, it outperforms the supervised learning approach of Vinyals
+
+problem with heuristics: once problem changes slighlty, the need to be revisited
+
+We propose a neural combinatorial optimization framework with 2 approaches based on policy gradients:
+1. RL pretraining
+Uses a training set to optimize a rnn that parameterizes a stochastic policy over solutions,using the
+expected reward as objective
+At test time, the policy is fixed and one performs inference by greedy decoding or sampling
+2. Active search
+involves no pretraining
+It starts from a random policy and iteratively optimizes the RNN parameters on a single test instance, again
+using the expected reward objective, while keeping track of the best solution sampled during the search.
+
+
+vanilla seq2seq problems:
+1. networks trained in this fashion cannot generalize to inputs with more than n cities
+2.one needs to have access to ground-truth output permutations to optimize the parameters with conditional
+log-likelihood.
+We address both issues in this paper.
+
+
+Architecture details
+Our pointer network consists of 2 RNNs ,encoder and decoder, which are LSTM cells.
+
+The encoder network reads the input sequence s ONE CITY AT A TIME and transforms it into a sequence of latent
+memory states {enc_i} ε R^d.
+The input to the encoder at timestep i is a d-dimensional embedding of a 2D point x_i.
+
+The decoder network also maintains its latent memory states {dec_i} where dec_iεR^d and at each step i
+uses a pointing mechanism to produce a distribution over the next city to visit in the tour.
+Once the next city is selected, it is passed as the input to the next decoder step.
+The input of the first decoder step is a d-dimensional vector treated as a trainable parameter of our neural network
+
+dec recap: At each i step: produces a distribution over the next city to visit
+city selected? -> it is passed as input to next decoder step
+if we havent selected city in first step? d-dimensional vector which is TRAINABLE
+
+Our attention function, takes as input a query vector q=dec_i ε R^d and a set
+of reference vectors ref= {enc_1,enc_2...enc_k} where enc_iεR^d and predicts a distribution A(ref,q)
+over the set of k references. This probability distribution represents the degree to which the
+model is pointing to reference r_i upon seeing query q
+
+Vinyals also suggest including some additional computation steps called glimpes to aggregate
+the contributions of different parts of the input sequence.utilizing one glimpse in the pointing mechanism
+yields performance gains at an insignificant cost latency.
+
+
+1. bazei ena baseline me ena moving average apo random (?) results pou rixnei arxika to montelo
