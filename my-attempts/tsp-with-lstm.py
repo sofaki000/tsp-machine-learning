@@ -4,18 +4,17 @@ import torch
 from model import EncoderDecoderModel
 from torch import optim
 from torch.utils.data import DataLoader
-
 from neural_combinatorial_optimization_rl.tsp_heuristic import get_ref_reward
 from plotUtilities import save_plot_with_y_axis
 from tsp import TSPDataset
 
 learning_rate = 0.001
-train_size = 50
-test_size = 20
+train_size = 500
+test_size = 200
 num_nodes = 5
 train_dataset = TSPDataset(num_nodes, train_size)
 test_dataset = TSPDataset(num_nodes, test_size)
-n_epochs = 10
+n_epochs = 1000
 batch_size = 1
 
 train_data_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
@@ -99,6 +98,6 @@ for i, pointset in tqdm(test_dataset):
 
 for i, batch in test_data_loader:
     R, _, _ = model(batch)
-    
+
     print( f"[at epoch {epoch}]RL model generates {(R / heuristic_distance).mean().detach().numpy():0.2f} time worse solution than heuristics")
     print("AVG R", R.mean().detach().numpy())
