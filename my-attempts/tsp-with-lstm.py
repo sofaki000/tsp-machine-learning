@@ -21,6 +21,9 @@ batch_size = 1
 train_data_loader = DataLoader(train_dataset, batch_size=batch_size, shuffle=True)
 test_data_loader = DataLoader(test_dataset, batch_size=batch_size, shuffle=True )
 
+# todo: auzhse batch_size
+# bale weight decay ston adam
+# bale lr schedulers
 hidden_size = 128
 embedding_size = 128
 beta= 0.9
@@ -28,7 +31,7 @@ model = EncoderDecoderModel(hidden_size=hidden_size,  embedding_size=embedding_s
 experiments_mean_losses = []
 titles = []
 
-optimizer = optim.Adam(model.parameters(), lr=3.0 * 1e-4)
+optimizer = optim.Adam(model.parameters(), lr=3.0 * 1e-4, weight_decay =0.01)
 # optimizer = optim.Adam(model.parameters(), lr=0.0001, weight_decay =0.01)
 
 # mask is used to not revisit same city

@@ -37,11 +37,7 @@ class Attention(nn.Module):
         self.W_k = nn.Linear(hidden_size, hidden_size)
         self.W_v = nn.Linear(hidden_size, 1)
     def forward(self, query, target):
-        """
-        Args:
-            query: [batch_size x hidden_size]
-            target:   [batch_size x seq_len x hidden_size]
-        """
+        """  Args:  query: [batch_size x hidden_size]  target:   [batch_size x seq_len x hidden_size]  """
         batch_size, seq_len, _ = target.shape
         query = self.W_q(query).unsqueeze(1).repeat(1, seq_len, 1)  # [batch_size x seq_len x hidden_size]
         target = self.W_k(target)  # [batch_size x seq_len x hidden_size]
